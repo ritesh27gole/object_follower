@@ -1,0 +1,60 @@
+<?xml version="1.0"?>
+
+<launch>
+  <!-- our xacro/urdf models -->
+  <arg name="model1" value="$(find ur5)/urdf/ur5_with_camera.urdf"/>
+  <arg name="model2" value="$(find wheely_robot)/urdf/wheely.xacro"/>
+
+  <!-- load our urdf models (strings) into global parameters called "robot_description1" and "robot_description2" -->
+  <!-- xacro parses xacro files and returns a urdf file -->
+  <param name="robot_description1" command="$(find xacro)/xacro $(arg model1)" />
+  <param name="robot_description2" command="$(find xacro)/xacro $(arg model2)" />
+
+  <!-- include file="$(find assembly_front_gazebo_description)/meshes/empty_world.launch" -->
+  <include file="$(find gazebo_ros)/launch/empty_world.launch">
+    <!-- <arg name="world_name" value="$(arg world_name)" /> -->
+    <arg name="debug" value="false" />
+    <arg name="gui" value="true" />
+    <arg name="paused" value="true"/>
+    <arg name="use_sim_time" value="true"/>
+    <arg name="headless" value="false"/>
+  </include>
+
+  <!-- Spawn the first robot using urdf_spawner node -->
+  <node name="urdf_spawner_robot1"
+        pkg="gazebo_ros"
+        type="spawn_model"
+        respawn="false"
+        output="screen"
+        args="-z 0
+              -urdf
+              -unpause
+              -model robot1
+              -param robot_description1"/>
+
+  <!-- Spawn the second robot using urdf_spawner node -->
+  <node name="urdf_spawner_robot2"
+        pkg="gazebo_ros"
+        type="spawn_model"
+        respawn="false"
+        output="screen"
+        args="-z 0
+              -y 1
+              -urdf
+              -unpause
+              -model robot2
+              -param robot_description2"/>
+
+  <!-- load multiple values stored in .yaml file into global parameters -->
+  <!-- parameters store motor controller configurations -->
+  <rosparam command="load"
+            file="$(find ur5)/config/controller.yaml" />
+                        
+  <!-- Spawn controllers -->
+  <node name="bot_controller_spawner"
+        pkg="controller_manager"
+        type="spawner"
+        args="joint_state_controller
+              robot_arm_controller" />
+
+</launch>
